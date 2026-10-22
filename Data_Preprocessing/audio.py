@@ -12,6 +12,10 @@ HOP_MS = 10
 # Einstellungen für das Abschneiden der Stille (an CREMA-D ausprobiert)
 MARGIN_DB = 6    # so viel lauter als das Rauschen muss ein Fenster sein, um als Sprache zu gelten
 PAD_MS = 200     # so viel Rand bleibt vor und nach der Sprache stehen
+# Bei sehr sauberen Aufnahmen (z. B. RAVDESS) ist die Stille fast digital still, und schon
+# leises Atmen läge über der Schwelle. Deshalb gilt zusätzlich: Sprache ist höchstens so
+# viel leiser als die lauteste Stelle. Bei verrauschten Aufnahmen (CREMA-D) ändert das nichts.
+MAX_BELOW_PEAK_DB = 40
 
 
 def trim_silence(wave: np.ndarray, sr: int = SAMPLE_RATE) -> tuple[np.ndarray, np.ndarray]:
@@ -27,7 +31,7 @@ def trim_silence(wave: np.ndarray, sr: int = SAMPLE_RATE) -> tuple[np.ndarray, n
 
     # Die leisesten 10 % der Fenster sind fast sicher Stille: daraus der Rauschpegel
     noise_floor = np.percentile(db, 10)
-    speech = db > noise_floor + MARGIN_DB
+    speech = (db > noise_floor + MARGIN_DB) & (db > -MAX_BELOW_PEAK_DB)
     if not speech.any():
         return wave, speech
 

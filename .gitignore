@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Projekt: Daten, berechnete Merkmale und trainierte Modelle gehören nicht ins Repository
+data/
+checkpoints/
+.DS_Store

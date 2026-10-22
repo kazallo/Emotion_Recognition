@@ -27,5 +27,7 @@ def load_dataset(dataset: str, features_file: str) -> tuple[pd.DataFrame, np.nda
     features = np.load(DATA_DIR / features_file)
     assert len(table) == len(features), "Tabelle und Merkmale passen nicht zusammen!"
 
-    usable = table["emotion"].isin(EMOTIONS).to_numpy() & ~np.isnan(features).any(axis=1)
+    # reshape: funktioniert für (Clips, 42) genauso wie für (Clips, Schichten, 1024)
+    has_nan = np.isnan(features.reshape(len(features), -1)).any(axis=1)
+    usable = table["emotion"].isin(EMOTIONS).to_numpy() & ~has_nan
     return table, features, usable
