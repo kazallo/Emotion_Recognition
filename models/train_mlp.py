@@ -19,13 +19,13 @@ from torch import nn
 from common import CHECKPOINT_DIR, EMOTIONS, SEED, load_dataset
 
 HIDDEN = 256
-DROPOUT = 0.3
-LEARNING_RATE = 1e-3
+DROPOUT = 0.4
+LEARNING_RATE = 2e-3
 WEIGHT_DECAY = 1e-4
 BATCH_SIZE = 64
-MAX_EPOCHS = 100
+MAX_EPOCHS = 400
 # Training endet, wenn die Validierung so viele Epochen lang nicht besser wurde
-PATIENCE = 10
+PATIENCE = 30
 
 
 class EmotionMLP(nn.Module):
@@ -50,9 +50,13 @@ def uar(y_true, y_pred) -> float:
 
 
 @torch.no_grad()
-def predict(model: nn.Module, x: torch.Tensor) -> np.ndarray:
+def predict_proba(model: nn.Module, x: torch.Tensor) -> np.ndarray:
     model.eval()
-    return model(x).argmax(dim=1).numpy()
+    return model(x).softmax(dim=1).numpy()
+
+
+def predict(model: nn.Module, x: torch.Tensor) -> np.ndarray:
+    return predict_proba(model, x).argmax(axis=1)
 
 
 def train(x_train, y_train, x_val, y_val) -> tuple[dict, float]:
@@ -87,8 +91,8 @@ def train(x_train, y_train, x_val, y_val) -> tuple[dict, float]:
     return best_state, best_uar
 
 
-def main(dataset: str) -> None:
-    table, embeddings, usable = load_dataset(dataset, f"{dataset}_wav2vec.npy")
+def main(dataset: str, embedding: str) -> None:
+    table, embeddings, usable = load_dataset(dataset, f"{dataset}_{embedding}.npy")
     # Gefühle als Zahlen 0, 1, 2, ... in der Reihenfolge von EMOTIONS
     labels = torch.tensor([EMOTIONS.index(e) if e in EMOTIONS else -1 for e in table["emotion"]])
     masks = {s: usable & (table["split"] == s).to_numpy() for s in ("train", "val", "test")}
@@ -123,14 +127,13 @@ def main(dataset: str) -> None:
         print(f"{EMOTIONS[i]:<9}" + "".join(f"{n:>9}" for n in row))
 
     CHECKPOINT_DIR.mkdir(exist_ok=True)
-    torch.save(
-        {"state": best["state"], "layer": best["layer"], "mean": best["mean"], "std": best["std"], "emotions": EMOTIONS},
-        CHECKPOINT_DIR / "mlp_wav2vec.pt",
-    )
-    print("\nGespeichert: checkpoints/mlp_wav2vec.pt")
+    torch.save({...}, CHECKPOINT_DIR / f"mlp_{embedding}.pt")
+    print(f"\nGespeichert: checkpoints/mlp_{embedding}.pt")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset", nargs="?", default="cremad")
-    main(parser.parse_args().dataset)
+    parser.add_argument("--embedding", default="wav2vec", choices=["wav2vec", "hubert", "distilhubert"])
+    args = parser.parse_args()
+    main(args.dataset, args.embedding)

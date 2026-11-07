@@ -11,7 +11,7 @@ CHECKPOINT_DIR = ROOT / "checkpoints"
 
 # Die Gefühle, mit denen trainiert wird. Hier eins entfernen oder hinzufügen,
 # dann passen sich alle Skripte an. Ekel (disgust) ist bewusst nicht dabei.
-EMOTIONS = ["anger", "fear", "joy", "neutral", "sadness"]
+EMOTIONS = ["anger", "joy", "neutral", "sadness"]
 
 SEED = 42
 
