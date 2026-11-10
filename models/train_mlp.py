@@ -19,8 +19,8 @@ from torch import nn
 from common import CHECKPOINT_DIR, EMOTIONS, SEED, load_dataset
 
 HIDDEN = 256
-DROPOUT = 0.4
-LEARNING_RATE = 2e-3
+DROPOUT = 0.3
+LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
 BATCH_SIZE = 64
 MAX_EPOCHS = 400
@@ -127,13 +127,22 @@ def main(dataset: str, embedding: str) -> None:
         print(f"{EMOTIONS[i]:<9}" + "".join(f"{n:>9}" for n in row))
 
     CHECKPOINT_DIR.mkdir(exist_ok=True)
-    torch.save({...}, CHECKPOINT_DIR / f"mlp_{embedding}.pt")
+    torch.save(
+    {
+        "state": best["state"],
+        "layer": best["layer"],
+        "mean": best["mean"],
+        "std": best["std"],
+        "emotions": EMOTIONS,
+    },
+    CHECKPOINT_DIR / f"mlp_{embedding}.pt",
+    )
     print(f"\nGespeichert: checkpoints/mlp_{embedding}.pt")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("dataset", nargs="?", default="cremad")
+    parser.add_argument("dataset", nargs="?", default="combined")
     parser.add_argument("--embedding", default="wav2vec", choices=["wav2vec", "hubert", "distilhubert"])
     args = parser.parse_args()
     main(args.dataset, args.embedding)

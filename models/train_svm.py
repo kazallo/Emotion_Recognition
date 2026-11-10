@@ -2,20 +2,25 @@
 
 Standard: die 15 Zahlen aus dem Autoencoder (wie das beste System im Paper).
 Mit --raw stattdessen die 42 Merkmale direkt, zum Vergleich.
+Mit --wav2vec die wav2vec-Embeddings, und zwar die Schicht, die das neuronale
+Netz gewählt hat (aus checkpoints/mlp_wav2vec.pt). So unterscheiden sich SVM
+und Netz nur noch im Klassifikator.
 
 C und gamma werden am Validierungsteil gewählt. Der Testteil wird erst ganz am
 Ende einmal benutzt.
 
-Ergebnis: checkpoints/svm_encoded.joblib (bzw. svm_raw.joblib)
+Ergebnis: checkpoints/svm_encoded.joblib (bzw. svm_raw.joblib, svm_wav2vec.joblib)
 
 Aufruf: uv run models/train_svm.py cremad
         uv run models/train_svm.py cremad --raw
+        uv run models/train_svm.py cremad --wav2vec
 """
 
 import argparse
 
 import joblib
 import numpy as np
+import torch
 from sklearn.metrics import confusion_matrix, recall_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -40,10 +45,24 @@ def uar(y_true, y_pred) -> float:
     return recall_score(y_true, y_pred, average="macro")
 
 
-def main(dataset: str, raw: bool) -> None:
-    name = "raw" if raw else "encoded"
-    features_file = f"{dataset}_features.npy" if raw else f"{dataset}_encoded.npy"
-    table, features, usable = load_dataset(dataset, features_file)
+FEATURE_FILES = {
+    "raw": "{dataset}_features.npy",
+    "encoded": "{dataset}_encoded.npy",
+    "wav2vec": "{dataset}_wav2vec.npy",
+}
+
+
+def wav2vec_layer() -> int:
+    """Die Schicht, die das neuronale Netz am Validierungsteil als beste gewählt hat."""
+    return torch.load(CHECKPOINT_DIR / "mlp_wav2vec.pt", weights_only=False)["layer"]
+
+
+def main(dataset: str, name: str) -> None:
+    table, features, usable = load_dataset(dataset, FEATURE_FILES[name].format(dataset=dataset))
+    if name == "wav2vec":
+        layer = wav2vec_layer()
+        features = features[:, layer].astype("float32")
+        print(f"wav2vec-Schicht {layer}")
 
     def part(split):
         mask = usable & (table["split"] == split).to_numpy()
@@ -92,6 +111,8 @@ def main(dataset: str, raw: bool) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset", nargs="?", default="cremad")
-    parser.add_argument("--raw", action="store_true", help="die 42 Merkmale direkt statt der Autoencoder-Merkmale")
+    choice = parser.add_mutually_exclusive_group()
+    choice.add_argument("--raw", action="store_true", help="die 42 Merkmale direkt statt der Autoencoder-Merkmale")
+    choice.add_argument("--wav2vec", action="store_true", help="die wav2vec-Embeddings (Schicht des neuronalen Netzes)")
     args = parser.parse_args()
-    main(args.dataset, args.raw)
+    main(args.dataset, "raw" if args.raw else "wav2vec" if args.wav2vec else "encoded")

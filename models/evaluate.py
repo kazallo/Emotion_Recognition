@@ -8,6 +8,7 @@ Modell heimlich an die Testdaten gewöhnen.
 Modelle:
   svm_raw       SVM auf den 42 Merkmalen            (models/train_svm.py --raw)
   svm_encoded   Autoencoder + SVM                   (models/autoencoder.py, models/train_svm.py)
+  svm_wav2vec   SVM auf wav2vec 2.0                 (models/train_svm.py --wav2vec)
   mlp           neuronales Netz auf wav2vec 2.0     (models/train_mlp.py)
 
 Aufruf: uv run models/evaluate.py ravdess svm_raw
@@ -24,6 +25,7 @@ from sklearn.metrics import confusion_matrix, recall_score
 from autoencoder import StackedAutoencoder
 from common import CHECKPOINT_DIR, EMOTIONS, load_dataset
 from train_mlp import EmotionMLP
+from train_svm import wav2vec_layer
 
 
 def predict_svm(svm_name: str, features: np.ndarray, encode: bool) -> np.ndarray:
@@ -40,12 +42,11 @@ def predict_svm(svm_name: str, features: np.ndarray, encode: bool) -> np.ndarray
     return svm.predict(features)
 
 
-def predict_mlp(embeddings: np.ndarray) -> np.ndarray:
-    saved = torch.load(CHECKPOINT_DIR / "mlp_wav2vec.pt", weights_only=False)
+def predict_mlp(embeddings: np.ndarray, embedding: str) -> np.ndarray:
+    saved = torch.load(CHECKPOINT_DIR / f"mlp_{embedding}.pt", weights_only=False)
     model = EmotionMLP(embeddings.shape[2], len(saved["emotions"]))
     model.load_state_dict(saved["state"])
     model.eval()
-    # Dieselbe Schicht und dieselbe Normalisierung wie im Training
     x = (embeddings[:, saved["layer"]].astype("float32") - saved["mean"]) / saved["std"]
     with torch.no_grad():
         classes = model(torch.from_numpy(x)).argmax(dim=1).numpy()
@@ -53,13 +54,24 @@ def predict_mlp(embeddings: np.ndarray) -> np.ndarray:
 
 
 def main(dataset: str, model: str) -> None:
-    features_file = f"{dataset}_wav2vec.npy" if model == "mlp" else f"{dataset}_features.npy"
+    is_mlp = model.startswith("mlp_")
+    embedding = model.removeprefix("mlp_")  # "mlp_hubert" -> "hubert"
+
+    if is_mlp:
+        features_file = f"{dataset}_{embedding}.npy"
+    elif model == "svm_wav2vec":
+        features_file = f"{dataset}_wav2vec.npy"
+    else:
+        features_file = f"{dataset}_features.npy"
     table, features, usable = load_dataset(dataset, features_file)
     test = usable & (table["split"] == "test").to_numpy()
     y_true = table.loc[test, "emotion"].to_numpy()
 
-    if model == "mlp":
-        prediction = predict_mlp(features[test])
+    if is_mlp:
+        prediction = predict_mlp(features[test], embedding)
+    elif model == "svm_wav2vec":
+        layer_features = features[test][:, wav2vec_layer()].astype("float32")
+        prediction = predict_svm(model, layer_features, encode=False)
     else:
         prediction = predict_svm(model, features[test], encode=(model == "svm_encoded"))
 
@@ -79,6 +91,6 @@ def main(dataset: str, model: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset", help="z. B. ravdess oder cremad")
-    parser.add_argument("model", choices=["svm_raw", "svm_encoded", "mlp"])
+    parser.add_argument("model", choices=["mlp_hubert", "mlp_wav2vec", "mlp_preprocessed_hubert", "mlp_preprocessed_wav2vec", "svm_hubert", "svm_wav2vec", "svm_encoded", "svm_raw"])
     args = parser.parse_args()
     main(args.dataset, args.model)

@@ -51,5 +51,5 @@ def main(dataset: str) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("dataset", nargs="?", default="cremad")
+    parser.add_argument("dataset", nargs="?", default="combined")
     main(parser.parse_args().dataset)
