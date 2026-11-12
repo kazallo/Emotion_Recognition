@@ -1,15 +1,24 @@
 {
   "dataset": "text_combined",
-  "seeds": 3,
-  "test_uar": 0.7595165349921651,
+  "backbone": "roberta-base",
+  "seeds": 5,
+  "temperature": 0.9392130687135566,
+  "seed_test_uar_mean": 0.7405193793825444,
+  "seed_test_uar_std": 0.0025765601265320378,
+  "seed_corpus_uar_mean": 0.7382351507373064,
+  "seed_corpus_uar_std": 0.002734624508290026,
+  "test_uar": 0.7533639082187813,
   "test_uar_per_corpus": {
-    "carer": 0.9495559665551866,
-    "goemotions": 0.6879374369586854
+    "carer": 0.7608527072801169,
+    "dailydialog": 0.7447593487121233,
+    "emocontext": 0.7721315817788432,
+    "goemotions": 0.7170357792782391
   },
+  "valence_mae": 0.32880109548568726,
   "recall": {
-    "anger": 0.7829457364341085,
-    "joy": 0.8098844161020327,
-    "neutral": 0.5885885885885885,
-    "sadness": 0.8566473988439306
+    "anger": 0.7419945105215004,
+    "joy": 0.7988372093023256,
+    "neutral": 0.725418410041841,
+    "sadness": 0.7472055030094583
   }
 }

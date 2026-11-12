@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Emotion-Demo (Sprecher-Normierung & ohne MELD)</title>
+<title>Emotion- & Diskrepanz-Demo (Stimme + Text)</title>
 <style>
   :root {
     --bg: #f6f6f4; --card: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --border: #dcdcd6;
-    --accent: #2f6fed; --accent-text: #ffffff; --bar: #2f6fed; --bar-bg: #ecece6; --danger: #c0392b;
-    --ok: #1e824c; --badge-bg: #eef3ff; --badge-text: #2050b5;
+    --accent: #2f6fed; --accent-text: #ffffff; --bar: #2f6fed; --bar-text: #16a085; --bar-bg: #ecece6;
+    --danger: #c0392b; --warn-bg: #fff4e5; --warn-border: #f39c12; --ok-bg: #eef9f1; --ok-border: #27ae60;
+    --badge-bg: #eef3ff; --badge-text: #2050b5;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #161616; --card: #202020; --text: #ececea; --muted: #9a9a94; --border: #333330;
-      --accent: #5b92ff; --accent-text: #0d0d0d; --bar: #5b92ff; --bar-bg: #2d2d2a; --danger: #ff7a6b;
-      --ok: #4cd97b; --badge-bg: #1e2c46; --badge-text: #8ab4ff;
+      --accent: #5b92ff; --accent-text: #0d0d0d; --bar: #5b92ff; --bar-text: #38d39f; --bar-bg: #2d2d2a;
+      --danger: #ff7a6b; --warn-bg: #332411; --warn-border: #e67e22; --ok-bg: #142b1d; --ok-border: #2ecc71;
+      --badge-bg: #1e2c46; --badge-text: #8ab4ff;
       color-scheme: dark;
     }
   }
@@ -24,11 +26,13 @@
     margin: 0; padding: 32px 16px; background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-  main { max-width: 680px; margin: 0 auto; }
+  main { max-width: 820px; margin: 0 auto; }
   h1 { font-size: 1.5rem; margin: 0 0 4px; }
   h2 { font-size: 1.05rem; margin: 0 0 10px; }
   .sub { color: var(--muted); margin: 0 0 20px; font-size: 0.95rem; line-height: 1.45; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .grid-2 { grid-template-columns: 1fr; } }
   label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
   select, input[type="text"] {
     width: 100%; padding: 10px 12px; font-size: 0.95rem; border-radius: 8px;
@@ -53,12 +57,22 @@
   audio { width: 100%; margin-top: 14px; }
   #status { color: var(--muted); font-size: 0.9rem; margin-top: 12px; min-height: 1.3em; }
   #status.error { color: var(--danger); }
-  #top { font-size: 2rem; font-weight: 700; margin: 0 0 14px; text-transform: capitalize; }
-  .bar-row { display: grid; grid-template-columns: 90px 1fr 58px; gap: 10px; align-items: center; margin: 8px 0; font-size: 0.95rem; }
-  .bar-bg { background: var(--bar-bg); border-radius: 6px; height: 14px; overflow: hidden; }
+  .top-emo { font-size: 1.65rem; font-weight: 700; margin: 4px 0 12px; text-transform: capitalize; }
+  .bar-row { display: grid; grid-template-columns: 78px 1fr 54px; gap: 8px; align-items: center; margin: 7px 0; font-size: 0.92rem; }
+  .bar-bg { background: var(--bar-bg); border-radius: 6px; height: 13px; overflow: hidden; }
   .bar { background: var(--bar); height: 100%; width: 0; border-radius: 6px; transition: width 0.3s ease; }
+  .bar.text-bar { background: var(--bar-text); }
   .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
-  .hint { color: var(--muted); font-size: 0.82rem; margin-top: 14px; line-height: 1.45; }
+  .quote {
+    font-style: italic; padding: 8px 12px; border-left: 3px solid var(--bar-text);
+    background: var(--bg); border-radius: 6px; margin-bottom: 10px; font-size: 0.92rem;
+  }
+  .disc-banner {
+    padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border);
+    margin-bottom: 16px; font-size: 0.93rem; line-height: 1.45;
+  }
+  .disc-banner.high, .disc-banner.medium { background: var(--warn-bg); border-color: var(--warn-border); }
+  .disc-banner.low { background: var(--ok-bg); border-color: var(--ok-border); }
   .hist-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .hist-item {
     display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; align-items: center;
@@ -73,14 +87,14 @@
 </head>
 <body>
 <main>
-  <h1>Emotion-Demo</h1>
+  <h1>Stimm- & Text-Emotion Demo (inkl. Sprecher-Normierung & Diskrepanz)</h1>
   <p class="sub">
-    Teste deine eigenen Aussagen mit dem neuen Ensemble-Modell <b>ohne MELD</b> und <b>mit Sprecher-Normierung</b> (90,5 % UAR).
-    Jede Aufnahme ergänzt dein persönliches Sprecher-Profil und kalibriert das Modell auf deine Stimmlage und dein Mikrofon.
+    Kombiniert dein neustes <b>Stimm-Modell ohne MELD + mit Sprecher-Normierung (90,8 % UAR)</b> mit dem neuen
+    <b>reinen Text- & Valenz-Modell (`roberta-base`, 75,3 % UAR)</b> und automatischer englischer Spracherkennung (Whisper).
   </p>
 
   <div class="card">
-    <label for="model">Modell auswählen</label>
+    <label for="model">Stimm-Emotionsmodell auswählen</label>
     <select id="model" disabled><option>Lade Modelle …</option></select>
     <div class="meta" id="modelInfo"></div>
   </div>
@@ -94,16 +108,17 @@
       <button id="resetSpk" class="sm" disabled>Profil zurücksetzen (neuer Sprecher)</button>
     </div>
     <div class="meta" id="spkHint">
-      Schon ab der 1. Aufnahme aktiv (mit Bayes-Glättung). Am besten 2–4 kurze englische Sätze mit unterschiedlicher Betonung aufnehmen (z. B. erst neutral, dann fröhlich/wütend/traurig) – alle bisherigen Aussagen werden dabei automatisch neu kalibriert!
+      Schon ab der 1. Aufnahme aktiv (mit Bayes-Glättung). Nimm 2–4 kurze englische Sätze mit unterschiedlicher Betonung auf – alle bisherigen Aussagen werden dabei automatisch auf deine Stimme nachkalibriert!
     </div>
   </div>
 
   <div class="card">
-    <label for="note">Optional: Gesagter Satz / Notiz für die Übersicht</label>
-    <input id="note" type="text" placeholder="z. B. Neutraler Referenzsatz oder 'Oh great, another Monday...'" style="margin-bottom: 12px;">
+    <label for="note">Englischer Satz (leer lassen = Whisper erkennt deinen gesprochenen Satz automatisch!)</label>
+    <input id="note" type="text" placeholder="Leer lassen für Auto-Transkription oder Satz eintippen, z. B. 'Oh great, I just love waiting in line...'" style="margin-bottom: 12px;">
     <div class="row">
       <button id="rec" class="primary" disabled>Aufnahme starten</button>
       <button id="pick" disabled>Audiodatei wählen</button>
+      <button id="textOnlyBtn" disabled>Nur Text prüfen</button>
       <span id="timer">0:00</span>
       <input id="file" type="file" accept="audio/*" class="hidden">
     </div>
@@ -111,15 +126,30 @@
     <div id="status"></div>
   </div>
 
-  <div class="card hidden" id="result">
-    <div id="top"></div>
-    <div id="bars"></div>
-    <div class="meta" id="resultMeta"></div>
+  <div class="hidden" id="resultSection">
+    <div id="discBanner" class="disc-banner hidden"></div>
+
+    <div class="grid-2">
+      <div class="card" id="voiceCard">
+        <label>1. Stimm-Emotion (Audio & Prosodie)</label>
+        <div class="top-emo" id="voiceTop">–</div>
+        <div id="voiceBars"></div>
+        <div class="meta" id="voiceMeta"></div>
+      </div>
+
+      <div class="card" id="textCard">
+        <label>2. Wörtliche Text-Emotion (roberta-base, ohne MELD)</label>
+        <div class="quote hidden" id="transcriptBox"></div>
+        <div class="top-emo" id="textTop">–</div>
+        <div id="textBars"></div>
+        <div class="meta" id="textMeta"></div>
+      </div>
+    </div>
   </div>
 
   <div class="card hidden" id="historyCard">
     <h2>Deine aufgenommenen Aussagen (automatisch mit aktuellem Sprecher-Profil normiert)</h2>
-    <div class="meta">Klicke auf eine Aussage, um sie anzuhören und ihre Verteilung oben anzuzeigen.</div>
+    <div class="meta">Klicke auf eine Aussage, um sie anzuhören und Stimm- vs. Text-Emotion oben anzuzeigen.</div>
     <div class="hist-list" id="historyList"></div>
   </div>
 </main>
@@ -130,9 +160,11 @@ const MAX_SECONDS = 30;
 const $ = (id) => document.getElementById(id);
 const els = {
   model: $("model"), info: $("modelInfo"), spkCount: $("spkCount"), spkHint: $("spkHint"),
-  resetSpk: $("resetSpk"), note: $("note"), rec: $("rec"), pick: $("pick"), file: $("file"),
-  timer: $("timer"), player: $("player"), status: $("status"), result: $("result"),
-  top: $("top"), bars: $("bars"), meta: $("resultMeta"),
+  resetSpk: $("resetSpk"), note: $("note"), rec: $("rec"), pick: $("pick"), textOnlyBtn: $("textOnlyBtn"),
+  file: $("file"), timer: $("timer"), player: $("player"), status: $("status"),
+  resultSection: $("resultSection"), discBanner: $("discBanner"),
+  voiceCard: $("voiceCard"), voiceTop: $("voiceTop"), voiceBars: $("voiceBars"), voiceMeta: $("voiceMeta"),
+  textCard: $("textCard"), transcriptBox: $("transcriptBox"), textTop: $("textTop"), textBars: $("textBars"), textMeta: $("textMeta"),
   historyCard: $("historyCard"), historyList: $("historyList"),
 };
 
@@ -147,11 +179,17 @@ function setStatus(text, isError = false) {
 }
 
 function formatModelLabel(m) {
+  if (m.id === "best_hubert_ms_wav2vec_ms_audeering_prosody_nomeld_spknorm") {
+    return `★ ${m.id} (Neustes: 4 Merkmale + Ohne MELD + Sprecher-Norm, 90.8 % UAR)`;
+  }
   if (m.id === "best_hubert_ms_wav2vec_ms_prosody_nomeld_spknorm") {
-    return `★ ${m.id} (Empfohlen: Ohne MELD + Sprecher-Norm, 90.5 % UAR)`;
+    return `★ ${m.id} (3 Merkmale + Ohne MELD + Sprecher-Norm, 90.5 % UAR)`;
+  }
+  if (m.id === "best_hubert_ms_wav2vec_ms_audeering_prosody_nomeld") {
+    return `${m.id} (4 Merkmale + Ohne MELD, ohne Sprecher-Norm, 79.9 % UAR)`;
   }
   if (m.id === "best_hubert_ms_wav2vec_ms_prosody_nomeld") {
-    return `${m.id} (Ohne MELD, ohne Sprecher-Norm, 79.3 % UAR)`;
+    return `${m.id} (3 Merkmale + Ohne MELD, ohne Sprecher-Norm, 79.3 % UAR)`;
   }
   if (m.id === "best_hubert_ms_wav2vec_ms_prosody_spknorm") {
     return `${m.id} (Mit MELD + Sprecher-Norm, 77.2 % UAR)`;
@@ -165,6 +203,7 @@ async function loadModels() {
     const data = await response.json();
     models = data.models || [];
     updateSpeakerBadge(data.speaker_clips || 0);
+    els.textOnlyBtn.disabled = !data.has_text_model;
   } catch (error) {
     setStatus("Server nicht erreichbar.", true);
     return;
@@ -191,8 +230,8 @@ function showModelInfo() {
   if (!m) return;
   const parts = [
     `Merkmale: ${m.features.join(" + ")}`,
-    m.nomeld ? "Training: Ohne MELD (reine Stimm-Emotion)" : "Training: Mit MELD",
-    m.speaker_norm ? "Sprecher-Normierung: Aktiv" : "Sprecher-Normierung: Aus (Einzel-Clip)",
+    m.nomeld ? "Training: Ohne MELD" : "Training: Mit MELD",
+    m.speaker_norm ? "Sprecher-Normierung: Aktiv" : "Sprecher-Normierung: Aus",
     `Temperatur T=${m.temperature}`,
   ];
   els.info.textContent = parts.join(" · ");
@@ -214,9 +253,7 @@ function updateSpeakerBadge(count) {
 
 els.model.addEventListener("change", async () => {
   showModelInfo();
-  if (audioByClipId.size > 0) {
-    await reclassifyAll();
-  }
+  if (audioByClipId.size > 0) await reclassifyAll();
 });
 
 els.resetSpk.addEventListener("click", async () => {
@@ -224,10 +261,37 @@ els.resetSpk.addEventListener("click", async () => {
   audioByClipId.clear();
   activeClipId = null;
   updateSpeakerBadge(0);
-  els.result.classList.add("hidden");
+  els.resultSection.classList.add("hidden");
   els.historyCard.classList.add("hidden");
   els.player.classList.add("hidden");
   setStatus("Sprecher-Profil wurde zurückgesetzt.");
+});
+
+els.textOnlyBtn.addEventListener("click", async () => {
+  const text = els.note.value.trim();
+  if (!text) {
+    setStatus("Bitte gib oben zuerst einen englischen Satz ein, um das Text-Modell allein zu testen.", true);
+    return;
+  }
+  setStatus("Berechne wörtliche Text-Emotion & Valenz …");
+  try {
+    const response = await fetch("/api/text_only", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `Fehler ${response.status}`);
+    els.discBanner.classList.add("hidden");
+    els.voiceTop.textContent = "– (Nur Text getestet)";
+    els.voiceBars.innerHTML = "";
+    els.voiceMeta.textContent = "Nimm einen Satz per Mikrofon auf, um auch die Stimm-Emotion zu vergleichen.";
+    renderTextBox(data);
+    els.resultSection.classList.remove("hidden");
+    setStatus("");
+  } catch (error) {
+    setStatus(error.message, true);
+  }
 });
 
 // ---------------------------------------------------------------- Aufnahme
@@ -284,10 +348,7 @@ els.rec.addEventListener("click", () => {
 els.pick.addEventListener("click", () => els.file.click());
 els.file.addEventListener("change", async () => {
   const file = els.file.files[0];
-  if (file) {
-    if (!els.note.value.trim()) els.note.value = file.name.replace(/\.[^.]+$/, "");
-    await handleBlob(file);
-  }
+  if (file) await handleBlob(file);
   els.file.value = "";
 });
 
@@ -355,7 +416,7 @@ async function handleBlob(blob) {
 async function classifyNewClip(wav, audioUrl) {
   if (!els.model.value || !models.length) return;
   const note = els.note.value.trim();
-  setStatus("Extrahiere HuBERT + Wav2Vec2 + Prosodie (beim 1. Mal werden die Encoder geladen, ca. 10–20 s) …");
+  setStatus("Berechne Stimm-Merkmale + Whisper-Transkription + Text-Emotion (beim 1. Mal werden die Modelle geladen) …");
   els.rec.disabled = true;
   try {
     const q = new URLSearchParams({ model: els.model.value, name: note });
@@ -409,7 +470,7 @@ async function deleteClip(id, event) {
   updateSpeakerBadge(data.speaker_clips);
   if (!data.history || !data.history.length) {
     activeClipId = null;
-    els.result.classList.add("hidden");
+    els.resultSection.classList.add("hidden");
     els.historyCard.classList.add("hidden");
     return;
   }
@@ -419,10 +480,9 @@ async function deleteClip(id, event) {
   renderHistory(data.history);
 }
 
-function renderClipResult(clip, computeSeconds, spkCount) {
-  const sorted = Object.entries(clip.probs).sort((a, b) => b[1] - a[1]);
-  els.top.textContent = `${clip.top} (${(sorted[0][1] * 100).toFixed(1)} %)`;
-  els.bars.innerHTML = "";
+function fillBars(container, probs, isText = false) {
+  container.innerHTML = "";
+  const sorted = Object.entries(probs).sort((a, b) => b[1] - a[1]);
   for (const [emotion, p] of sorted) {
     const row = document.createElement("div");
     row.className = "bar-row";
@@ -431,18 +491,59 @@ function renderClipResult(clip, computeSeconds, spkCount) {
     const bg = document.createElement("div");
     bg.className = "bar-bg";
     const bar = document.createElement("div");
-    bar.className = "bar";
+    bar.className = isText ? "bar text-bar" : "bar";
     bg.appendChild(bar);
     const pct = document.createElement("span");
     pct.className = "pct";
     pct.textContent = `${(p * 100).toFixed(1)} %`;
     row.append(name, bg, pct);
-    els.bars.appendChild(row);
+    container.appendChild(row);
     requestAnimationFrame(() => { bar.style.width = `${p * 100}%`; });
   }
-  const timeInfo = computeSeconds ? `, Berechnung ${computeSeconds} s` : "";
-  els.meta.textContent = `${clip.name} · Dauer ${clip.seconds} s${timeInfo} · Normiert über ${spkCount} Aufnahme(n) im Sprecher-Profil`;
-  els.result.classList.remove("hidden");
+}
+
+function renderTextBox(textRes) {
+  if (!textRes) {
+    els.transcriptBox.classList.add("hidden");
+    els.textTop.textContent = "Kein Text erkannt";
+    els.textBars.innerHTML = "";
+    els.textMeta.textContent = "";
+    return;
+  }
+  els.transcriptBox.textContent = `"${textRes.text}"`;
+  els.transcriptBox.classList.remove("hidden");
+  const topP = (textRes.probs[textRes.top] * 100).toFixed(1);
+  els.textTop.textContent = `${textRes.top} (${topP} %)`;
+  fillBars(els.textBars, textRes.probs, true);
+  const valSign = textRes.valence >= 0 ? `+${textRes.valence.toFixed(2)}` : textRes.valence.toFixed(2);
+  els.textMeta.textContent = `Text-Valenz: ${valSign} (Skala -1 negativ bis +1 positiv)`;
+}
+
+function renderClipResult(clip, computeSeconds, spkCount) {
+  const topP = (clip.probs[clip.top] * 100).toFixed(1);
+  els.voiceTop.textContent = `${clip.top} (${topP} %)`;
+  fillBars(els.voiceBars, clip.probs, false);
+
+  const vad = clip.voice_vad || { valence: 0, arousal: 0.5, dominance: 0.5 };
+  const vSign = vad.valence >= 0 ? `+${vad.valence.toFixed(2)}` : vad.valence.toFixed(2);
+  const timeInfo = computeSeconds ? ` · ${computeSeconds} s` : "";
+  els.voiceMeta.textContent =
+    `Stimm-Valenz: ${vSign} · Arousal: ${(vad.arousal * 100).toFixed(0)} % · Dominanz: ${(vad.dominance * 100).toFixed(0)} % · ` +
+    `${spkCount} Aufnahme(n) im Profil${timeInfo}`;
+
+  renderTextBox(clip.text_result);
+
+  if (clip.discrepancy) {
+    els.discBanner.className = `disc-banner ${clip.discrepancy.level}`;
+    const gap = clip.discrepancy.valence_gap;
+    const gapStr = gap >= 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2);
+    els.discBanner.innerHTML = `<strong>Diskrepanz-Check (Text vs. Stimme, ΔValenz = ${gapStr}):</strong> ${clip.discrepancy.summary}`;
+    els.discBanner.classList.remove("hidden");
+  } else {
+    els.discBanner.classList.add("hidden");
+  }
+
+  els.resultSection.classList.remove("hidden");
 }
 
 function renderHistory(history) {
@@ -456,18 +557,16 @@ function renderHistory(history) {
     const div = document.createElement("div");
     div.className = "hist-item" + (item.id === activeClipId ? " active" : "");
     const title = document.createElement("span");
-    title.textContent = `${item.name} (${item.seconds} s)`;
+    title.textContent = `"${item.name}" (${item.seconds} s)`;
     const emo = document.createElement("span");
     emo.className = "hist-emotion";
-    const bestP = (item.probs[item.top] * 100).toFixed(1);
-    emo.textContent = `${item.top} (${bestP} %)`;
+    const bestP = (item.probs[item.top] * 100).toFixed(0);
+    const txtInfo = item.text_result ? ` | Text: ${item.text_result.top} (${(item.text_result.probs[item.text_result.top] * 100).toFixed(0)}%)` : "";
+    emo.textContent = `Stimme: ${item.top} (${bestP}%)${txtInfo}`;
     const sub = document.createElement("span");
     sub.style.color = "var(--muted)";
     sub.style.fontSize = "0.8rem";
-    sub.textContent = Object.entries(item.probs)
-      .sort((a, b) => b[1] - a[1])
-      .map(([k, v]) => `${k.slice(0, 3)} ${(v * 100).toFixed(0)}%`)
-      .join(" · ");
+    sub.textContent = item.discrepancy && item.discrepancy.level !== "low" ? "⚠️ Diskrepanz" : "✓ Konsistent";
     const del = document.createElement("button");
     del.className = "del-btn";
     del.textContent = "×";
