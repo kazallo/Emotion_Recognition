@@ -40,9 +40,9 @@ def main(dataset: str) -> None:
     encoder = HUBERTEncoder()
     print(f"{len(table)} Clips, Berechnung auf: {encoder.device}")
 
-    # float32 
+    # float16 reicht für die Embeddings und halbiert den Speicherplatz
     embeddings = np.stack(
-        [encoder.embed(load_audio(DATA_DIR / path)).astype("float32") for path in tqdm(table["path"], desc="Embeddings")]
+        [encoder.embed(load_audio(DATA_DIR / path)).astype("float16") for path in tqdm(table["path"], desc="Embeddings")]
     )
 
     np.save(DATA_DIR / f"{dataset}_hubert.npy", embeddings)

@@ -1,0 +1,35 @@
+{
+  "features": [
+    "hubert_ms",
+    "wav2vec_ms",
+    "prosody"
+  ],
+  "exclude_corpora": [
+    "meld"
+  ],
+  "seeds": 5,
+  "speaker_norm": false,
+  "con_augment": false,
+  "temperature": 0.7700548131515562,
+  "seed_test_uar_mean": 0.7920618405865427,
+  "seed_test_uar_std": 0.01592963954485646,
+  "seed_corpus_uar_mean": 0.8460412087912088,
+  "seed_corpus_uar_std": 0.01149830576865185,
+  "test_uar": 0.7928509885250736,
+  "test_uar_per_corpus": {
+    "cremad": 0.8789542786530739,
+    "esd": 0.7607142857142857,
+    "ravdess": 0.90625
+  },
+  "val_uar_per_corpus": {
+    "cremad": 0.8768999073215941,
+    "esd": 0.8632142857142857,
+    "ravdess": 0.9140625
+  },
+  "recall": {
+    "anger": 0.8790406673618353,
+    "joy": 0.9457768508863399,
+    "neutral": 0.7438752783964365,
+    "sadness": 0.602711157455683
+  }
+}

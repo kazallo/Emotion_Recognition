@@ -16,6 +16,17 @@ EMOTIONS = ["anger", "joy", "neutral", "sadness"]
 SEED = 42
 
 
+def get_device() -> str:
+    """Wählt automatisch NVIDIA-GPU (cuda auf Hochschul-Server), Apple-GPU (mps) oder CPU."""
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def load_dataset(dataset: str, features_file: str) -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
     """Lädt Tabelle und Merkmale und sagt, welche Clips benutzt werden.
 
@@ -31,3 +42,29 @@ def load_dataset(dataset: str, features_file: str) -> tuple[pd.DataFrame, np.nda
     has_nan = np.isnan(features.reshape(len(features), -1)).any(axis=1)
     usable = table["emotion"].isin(EMOTIONS).to_numpy() & ~has_nan
     return table, features, usable
+
+RESULTS_DIR = ROOT / "results"
+
+
+def per_corpus_uar(table: pd.DataFrame, mask: np.ndarray, y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
+    """UAR getrennt pro Korpus (nur für die Clips in `mask`).
+
+    ESD (gespielt, sauber) und MELD (Fernsehen, verrauscht) sind sehr verschieden.
+    Ein einziger Gesamtwert versteckt, wo das Modell wirklich schwach ist.
+    """
+    from sklearn.metrics import recall_score
+
+    corpus = table.loc[mask, "corpus"].to_numpy()
+    return {
+        c: float(recall_score(y_true[corpus == c], y_pred[corpus == c], labels=np.unique(y_true[corpus == c]), average="macro"))
+        for c in sorted(set(corpus))
+    }
+
+
+def save_results(name: str, results: dict) -> None:
+    """Schreibt Kennzahlen eines Laufs nach results/<name>.json (zum Vergleichen und Nachschlagen)."""
+    import json
+
+    RESULTS_DIR.mkdir(exist_ok=True)
+    (RESULTS_DIR / f"{name}.json").write_text(json.dumps(results, indent=2, ensure_ascii=False))
+    print(f"Kennzahlen: results/{name}.json")

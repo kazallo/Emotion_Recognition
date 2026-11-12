@@ -3,17 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Emotion-Demo</title>
+<title>Emotion-Demo (Sprecher-Normierung & ohne MELD)</title>
 <style>
   :root {
     --bg: #f6f6f4; --card: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --border: #dcdcd6;
     --accent: #2f6fed; --accent-text: #ffffff; --bar: #2f6fed; --bar-bg: #ecece6; --danger: #c0392b;
+    --ok: #1e824c; --badge-bg: #eef3ff; --badge-text: #2050b5;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #161616; --card: #202020; --text: #ececea; --muted: #9a9a94; --border: #333330;
       --accent: #5b92ff; --accent-text: #0d0d0d; --bar: #5b92ff; --bar-bg: #2d2d2a; --danger: #ff7a6b;
+      --ok: #4cd97b; --badge-bg: #1e2c46; --badge-text: #8ab4ff;
       color-scheme: dark;
     }
   }
@@ -22,52 +24,86 @@
     margin: 0; padding: 32px 16px; background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-  main { max-width: 640px; margin: 0 auto; }
+  main { max-width: 680px; margin: 0 auto; }
   h1 { font-size: 1.5rem; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 24px; font-size: 0.95rem; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 0.95rem; line-height: 1.45; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
-  select {
-    width: 100%; padding: 10px 12px; font-size: 1rem; border-radius: 8px;
+  select, input[type="text"] {
+    width: 100%; padding: 10px 12px; font-size: 0.95rem; border-radius: 8px;
     border: 1px solid var(--border); background: var(--bg); color: var(--text);
   }
-  .meta { color: var(--muted); font-size: 0.85rem; margin-top: 8px; min-height: 1.2em; }
-  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-top: 8px; min-height: 1.2em; line-height: 1.4; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
   button {
-    font-size: 1rem; padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: 0.95rem; padding: 11px 18px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--bg); color: var(--text); cursor: pointer;
   }
+  button.sm { font-size: 0.82rem; padding: 6px 11px; }
   button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
   button.recording { background: var(--danger); border-color: var(--danger); color: #ffffff; }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .badge {
+    display: inline-block; font-size: 0.8rem; font-weight: 600; padding: 4px 10px;
+    border-radius: 999px; background: var(--badge-bg); color: var(--badge-text);
+  }
   #timer { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 4ch; }
-  audio { width: 100%; margin-top: 16px; }
+  audio { width: 100%; margin-top: 14px; }
   #status { color: var(--muted); font-size: 0.9rem; margin-top: 12px; min-height: 1.3em; }
   #status.error { color: var(--danger); }
-  #top { font-size: 2rem; font-weight: 700; margin: 0 0 16px; text-transform: capitalize; }
-  .bar-row { display: grid; grid-template-columns: 90px 1fr 56px; gap: 10px; align-items: center; margin: 8px 0; font-size: 0.95rem; }
+  #top { font-size: 2rem; font-weight: 700; margin: 0 0 14px; text-transform: capitalize; }
+  .bar-row { display: grid; grid-template-columns: 90px 1fr 58px; gap: 10px; align-items: center; margin: 8px 0; font-size: 0.95rem; }
   .bar-bg { background: var(--bar-bg); border-radius: 6px; height: 14px; overflow: hidden; }
   .bar { background: var(--bar); height: 100%; width: 0; border-radius: 6px; transition: width 0.3s ease; }
   .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
-  .hint { color: var(--muted); font-size: 0.8rem; margin-top: 16px; }
+  .hint { color: var(--muted); font-size: 0.82rem; margin-top: 14px; line-height: 1.45; }
+  .hist-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .hist-item {
+    display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; align-items: center;
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg);
+    cursor: pointer; font-size: 0.9rem;
+  }
+  .hist-item.active { border-color: var(--accent); }
+  .hist-emotion { font-weight: 600; text-transform: capitalize; }
+  .del-btn { padding: 3px 8px; font-size: 0.8rem; border-radius: 6px; }
   .hidden { display: none; }
 </style>
 </head>
 <body>
 <main>
   <h1>Emotion-Demo</h1>
-  <p class="sub">Nimm einen Satz auf oder lade eine Audiodatei hoch. Das gewählte Modell sagt die Emotion aus dem Ton voraus.</p>
+  <p class="sub">
+    Teste deine eigenen Aussagen mit dem neuen Ensemble-Modell <b>ohne MELD</b> und <b>mit Sprecher-Normierung</b> (90,5 % UAR).
+    Jede Aufnahme ergänzt dein persönliches Sprecher-Profil und kalibriert das Modell auf deine Stimmlage und dein Mikrofon.
+  </p>
 
   <div class="card">
-    <label for="model">Modell</label>
+    <label for="model">Modell auswählen</label>
     <select id="model" disabled><option>Lade Modelle …</option></select>
     <div class="meta" id="modelInfo"></div>
   </div>
 
+  <div class="card" id="spkCard">
+    <div class="row-between">
+      <div>
+        <strong>Sprecher-Profil (Live-Normierung)</strong>
+        <span class="badge" id="spkCount">0 Aufnahmen</span>
+      </div>
+      <button id="resetSpk" class="sm" disabled>Profil zurücksetzen (neuer Sprecher)</button>
+    </div>
+    <div class="meta" id="spkHint">
+      Schon ab der 1. Aufnahme aktiv (mit Bayes-Glättung). Am besten 2–4 kurze englische Sätze mit unterschiedlicher Betonung aufnehmen (z. B. erst neutral, dann fröhlich/wütend/traurig) – alle bisherigen Aussagen werden dabei automatisch neu kalibriert!
+    </div>
+  </div>
+
   <div class="card">
+    <label for="note">Optional: Gesagter Satz / Notiz für die Übersicht</label>
+    <input id="note" type="text" placeholder="z. B. Neutraler Referenzsatz oder 'Oh great, another Monday...'" style="margin-bottom: 12px;">
     <div class="row">
       <button id="rec" class="primary" disabled>Aufnahme starten</button>
-      <button id="pick" disabled>Datei wählen</button>
+      <button id="pick" disabled>Audiodatei wählen</button>
       <span id="timer">0:00</span>
       <input id="file" type="file" accept="audio/*" class="hidden">
     </div>
@@ -79,7 +115,12 @@
     <div id="top"></div>
     <div id="bars"></div>
     <div class="meta" id="resultMeta"></div>
-    <div class="hint">Die Werte sind Modellwahrscheinlichkeiten, keine kalibrierten Sicherheiten. Trainiert wurde auf gespielter und TV-Sprache, bei eigenen Aufnahmen kann das Modell deutlich danebenliegen.</div>
+  </div>
+
+  <div class="card hidden" id="historyCard">
+    <h2>Deine aufgenommenen Aussagen (automatisch mit aktuellem Sprecher-Profil normiert)</h2>
+    <div class="meta">Klicke auf eine Aussage, um sie anzuhören und ihre Verteilung oben anzuzeigen.</div>
+    <div class="hist-list" id="historyList"></div>
   </div>
 </main>
 
@@ -88,13 +129,16 @@ const TARGET_SR = 16000;
 const MAX_SECONDS = 30;
 const $ = (id) => document.getElementById(id);
 const els = {
-  model: $("model"), info: $("modelInfo"), rec: $("rec"), pick: $("pick"), file: $("file"),
+  model: $("model"), info: $("modelInfo"), spkCount: $("spkCount"), spkHint: $("spkHint"),
+  resetSpk: $("resetSpk"), note: $("note"), rec: $("rec"), pick: $("pick"), file: $("file"),
   timer: $("timer"), player: $("player"), status: $("status"), result: $("result"),
   top: $("top"), bars: $("bars"), meta: $("resultMeta"),
+  historyCard: $("historyCard"), historyList: $("historyList"),
 };
 
 let models = [];
-let lastWav = null;       // zuletzt aufgenommene oder hochgeladene Datei, wird beim Modellwechsel erneut klassifiziert
+let audioByClipId = new Map();
+let activeClipId = null;
 let recorder = null, stream = null, chunks = [], timerId = null, startedAt = 0;
 
 function setStatus(text, isError = false) {
@@ -102,11 +146,25 @@ function setStatus(text, isError = false) {
   els.status.classList.toggle("error", isError);
 }
 
-// ---------------------------------------------------------------- Modelle
+function formatModelLabel(m) {
+  if (m.id === "best_hubert_ms_wav2vec_ms_prosody_nomeld_spknorm") {
+    return `★ ${m.id} (Empfohlen: Ohne MELD + Sprecher-Norm, 90.5 % UAR)`;
+  }
+  if (m.id === "best_hubert_ms_wav2vec_ms_prosody_nomeld") {
+    return `${m.id} (Ohne MELD, ohne Sprecher-Norm, 79.3 % UAR)`;
+  }
+  if (m.id === "best_hubert_ms_wav2vec_ms_prosody_spknorm") {
+    return `${m.id} (Mit MELD + Sprecher-Norm, 77.2 % UAR)`;
+  }
+  return m.id;
+}
+
 async function loadModels() {
   try {
     const response = await fetch("/api/models");
-    models = await response.json();
+    const data = await response.json();
+    models = data.models || [];
+    updateSpeakerBadge(data.speaker_clips || 0);
   } catch (error) {
     setStatus("Server nicht erreichbar.", true);
     return;
@@ -114,13 +172,12 @@ async function loadModels() {
   els.model.innerHTML = "";
   if (!models.length) {
     els.model.innerHTML = "<option>Keine Checkpoints gefunden</option>";
-    els.info.textContent = "Lege trainierte Modelle (mlp_<encoder>.pt) in den Ordner checkpoints/.";
     return;
   }
   for (const m of models) {
     const option = document.createElement("option");
     option.value = m.id;
-    option.textContent = m.id;
+    option.textContent = formatModelLabel(m);
     els.model.appendChild(option);
   }
   els.model.disabled = false;
@@ -131,12 +188,46 @@ async function loadModels() {
 
 function showModelInfo() {
   const m = models.find((x) => x.id === els.model.value);
-  if (m) els.info.textContent = `Encoder: ${m.encoder}, Schicht ${m.layer}, Klassen: ${m.emotions.join(", ")}`;
+  if (!m) return;
+  const parts = [
+    `Merkmale: ${m.features.join(" + ")}`,
+    m.nomeld ? "Training: Ohne MELD (reine Stimm-Emotion)" : "Training: Mit MELD",
+    m.speaker_norm ? "Sprecher-Normierung: Aktiv" : "Sprecher-Normierung: Aus (Einzel-Clip)",
+    `Temperatur T=${m.temperature}`,
+  ];
+  els.info.textContent = parts.join(" · ");
 }
 
-els.model.addEventListener("change", () => {
+function updateSpeakerBadge(count) {
+  els.spkCount.textContent = count === 1 ? "1 Aufnahme" : `${count} Aufnahmen`;
+  els.resetSpk.disabled = count === 0;
+  if (count === 0) {
+    els.spkHint.textContent = "Nimm einen ersten englischen Satz auf (z. B. neutral) und danach deine emotionalen oder ironischen Aussagen.";
+  } else if (count === 1) {
+    els.spkHint.textContent = "1 Aufnahme im Profil (Bayes-Glättung aktiv). Nimm noch 1–3 weitere Sätze mit anderer Betonung auf, damit das Modell deine persönliche Stimmlage herausrechnen kann!";
+  } else if (count < 4) {
+    els.spkHint.textContent = `${count} Aufnahmen im Profil – deine persönliche Stimmlage wird jetzt aktiv normiert. Jede weitere Aufnahme mit anderer Emotion verbessert die Kalibrierung noch weiter.`;
+  } else {
+    els.spkHint.textContent = `${count} Aufnahmen im Profil – Sprecher-Normierung ist voll auf deine Stimme und dein Mikrofon kalibriert!`;
+  }
+}
+
+els.model.addEventListener("change", async () => {
   showModelInfo();
-  if (lastWav) classify(lastWav);
+  if (audioByClipId.size > 0) {
+    await reclassifyAll();
+  }
+});
+
+els.resetSpk.addEventListener("click", async () => {
+  await fetch("/api/speaker/reset", { method: "POST" });
+  audioByClipId.clear();
+  activeClipId = null;
+  updateSpeakerBadge(0);
+  els.result.classList.add("hidden");
+  els.historyCard.classList.add("hidden");
+  els.player.classList.add("hidden");
+  setStatus("Sprecher-Profil wurde zurückgesetzt.");
 });
 
 // ---------------------------------------------------------------- Aufnahme
@@ -147,7 +238,6 @@ function formatTime(seconds) {
 
 async function startRecording() {
   try {
-    // Browser-Filter aus, damit das Signal dem Trainingsmaterial möglichst nahekommt
     stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
     });
@@ -194,7 +284,10 @@ els.rec.addEventListener("click", () => {
 els.pick.addEventListener("click", () => els.file.click());
 els.file.addEventListener("change", async () => {
   const file = els.file.files[0];
-  if (file) await handleBlob(file);
+  if (file) {
+    if (!els.note.value.trim()) els.note.value = file.name.replace(/\.[^.]+$/, "");
+    await handleBlob(file);
+  }
   els.file.value = "";
 });
 
@@ -209,7 +302,7 @@ async function toWav16k(blob) {
     context.close();
   }
   const length = Math.max(1, Math.ceil(decoded.duration * TARGET_SR));
-  const offline = new OfflineAudioContext(1, length, TARGET_SR); // ein Kanal: Stereo wird zu Mono gemischt
+  const offline = new OfflineAudioContext(1, length, TARGET_SR);
   const source = offline.createBufferSource();
   source.buffer = decoded;
   source.connect(offline.destination);
@@ -227,8 +320,8 @@ function encodeWav(samples, sampleRate) {
   write(8, "WAVE");
   write(12, "fmt ");
   view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);              // PCM
-  view.setUint16(22, 1, true);              // Mono
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
   view.setUint32(24, sampleRate, true);
   view.setUint32(28, sampleRate * 2, true);
   view.setUint16(32, 2, true);
@@ -243,33 +336,43 @@ function encodeWav(samples, sampleRate) {
   return new Blob([buffer], { type: "audio/wav" });
 }
 
-// ---------------------------------------------------------------- Klassifikation
+// ---------------------------------------------------------------- Klassifikation & Sprecher-Profil
 async function handleBlob(blob) {
-  setStatus("Wandle Audio um …");
+  setStatus("Wandle Audio in 16 kHz WAV um …");
+  let wav;
   try {
-    lastWav = await toWav16k(blob);
+    wav = await toWav16k(blob);
   } catch (error) {
     setStatus("Das Audio konnte nicht gelesen werden.", true);
     return;
   }
-  els.player.src = URL.createObjectURL(lastWav);
+  const url = URL.createObjectURL(wav);
+  els.player.src = url;
   els.player.classList.remove("hidden");
-  await classify(lastWav);
+  await classifyNewClip(wav, url);
 }
 
-async function classify(wav) {
+async function classifyNewClip(wav, audioUrl) {
   if (!els.model.value || !models.length) return;
-  setStatus("Berechne … (beim ersten Mal lädt der Server den Encoder, das kann etwas dauern)");
+  const note = els.note.value.trim();
+  setStatus("Extrahiere HuBERT + Wav2Vec2 + Prosodie (beim 1. Mal werden die Encoder geladen, ca. 10–20 s) …");
   els.rec.disabled = true;
   try {
-    const response = await fetch(`/api/classify?model=${encodeURIComponent(els.model.value)}`, {
+    const q = new URLSearchParams({ model: els.model.value, name: note });
+    const response = await fetch(`/api/classify?${q}`, {
       method: "POST",
       headers: { "Content-Type": "audio/wav" },
       body: wav,
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `Fehler ${response.status}`);
-    render(data);
+    els.note.value = "";
+    const latest = data.history[data.history.length - 1];
+    audioByClipId.set(latest.id, audioUrl);
+    activeClipId = latest.id;
+    updateSpeakerBadge(data.speaker_clips);
+    renderClipResult(latest, data.compute_seconds, data.speaker_clips);
+    renderHistory(data.history);
     setStatus("");
   } catch (error) {
     setStatus(error.message, true);
@@ -278,9 +381,47 @@ async function classify(wav) {
   }
 }
 
-function render(data) {
-  const sorted = Object.entries(data.probs).sort((a, b) => b[1] - a[1]);
-  els.top.textContent = data.top;
+async function reclassifyAll() {
+  if (!els.model.value) return;
+  setStatus("Berechne alle Aussagen mit dem gewählten Modell neu …");
+  try {
+    const response = await fetch(`/api/reclassify?model=${encodeURIComponent(els.model.value)}`, { method: "POST" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `Fehler ${response.status}`);
+    updateSpeakerBadge(data.speaker_clips);
+    if (data.history && data.history.length) {
+      const selected = data.history.find((h) => h.id === activeClipId) || data.history[data.history.length - 1];
+      activeClipId = selected.id;
+      renderClipResult(selected, data.compute_seconds, data.speaker_clips);
+      renderHistory(data.history);
+    }
+    setStatus("");
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+async function deleteClip(id, event) {
+  event.stopPropagation();
+  const response = await fetch(`/api/speaker/delete/${id}?model=${encodeURIComponent(els.model.value)}`, { method: "POST" });
+  const data = await response.json();
+  audioByClipId.delete(id);
+  updateSpeakerBadge(data.speaker_clips);
+  if (!data.history || !data.history.length) {
+    activeClipId = null;
+    els.result.classList.add("hidden");
+    els.historyCard.classList.add("hidden");
+    return;
+  }
+  const selected = data.history.find((h) => h.id === activeClipId) || data.history[data.history.length - 1];
+  activeClipId = selected.id;
+  renderClipResult(selected, 0, data.speaker_clips);
+  renderHistory(data.history);
+}
+
+function renderClipResult(clip, computeSeconds, spkCount) {
+  const sorted = Object.entries(clip.probs).sort((a, b) => b[1] - a[1]);
+  els.top.textContent = `${clip.top} (${(sorted[0][1] * 100).toFixed(1)} %)`;
   els.bars.innerHTML = "";
   for (const [emotion, p] of sorted) {
     const row = document.createElement("div");
@@ -299,8 +440,54 @@ function render(data) {
     els.bars.appendChild(row);
     requestAnimationFrame(() => { bar.style.width = `${p * 100}%`; });
   }
-  els.meta.textContent = `Aufnahme ${data.seconds} s, Berechnung ${data.compute_seconds} s`;
+  const timeInfo = computeSeconds ? `, Berechnung ${computeSeconds} s` : "";
+  els.meta.textContent = `${clip.name} · Dauer ${clip.seconds} s${timeInfo} · Normiert über ${spkCount} Aufnahme(n) im Sprecher-Profil`;
   els.result.classList.remove("hidden");
+}
+
+function renderHistory(history) {
+  if (!history || !history.length) {
+    els.historyCard.classList.add("hidden");
+    return;
+  }
+  els.historyCard.classList.remove("hidden");
+  els.historyList.innerHTML = "";
+  for (const item of [...history].reverse()) {
+    const div = document.createElement("div");
+    div.className = "hist-item" + (item.id === activeClipId ? " active" : "");
+    const title = document.createElement("span");
+    title.textContent = `${item.name} (${item.seconds} s)`;
+    const emo = document.createElement("span");
+    emo.className = "hist-emotion";
+    const bestP = (item.probs[item.top] * 100).toFixed(1);
+    emo.textContent = `${item.top} (${bestP} %)`;
+    const sub = document.createElement("span");
+    sub.style.color = "var(--muted)";
+    sub.style.fontSize = "0.8rem";
+    sub.textContent = Object.entries(item.probs)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `${k.slice(0, 3)} ${(v * 100).toFixed(0)}%`)
+      .join(" · ");
+    const del = document.createElement("button");
+    del.className = "del-btn";
+    del.textContent = "×";
+    del.title = "Aus Sprecher-Profil entfernen";
+    del.onclick = (e) => deleteClip(item.id, e);
+
+    div.onclick = () => {
+      activeClipId = item.id;
+      const url = audioByClipId.get(item.id);
+      if (url) {
+        els.player.src = url;
+        els.player.classList.remove("hidden");
+        els.player.play().catch(() => {});
+      }
+      renderClipResult(item, 0, history.length);
+      renderHistory(history);
+    };
+    div.append(title, emo, sub, del);
+    els.historyList.appendChild(div);
+  }
 }
 
 loadModels();

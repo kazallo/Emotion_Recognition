@@ -10,6 +10,7 @@ dependencies = [
     "numpy>=2.5.4",
     "pandas>=3.1.0",
     "praat-parselmouth>=0.4.7",
+    "pyarrow>=26.0.1",
     "scikit-learn>=1.9.1",
     "soundfile>=0.14.0",
     "torch>=2.14.1",
